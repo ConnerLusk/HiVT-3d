@@ -95,24 +95,17 @@ def uav_data(split: str, raw_path: str) -> Dict:
     df = df[df["TRACK_ID"].isin(actor_ids)]
     num_nodes = len(actor_ids)
 
-    av_df = df[df["OBJECT_TYPE"] == "AV"].iloc
-    av_index = actor_ids.index(av_df[0]["TRACK_ID"])
     agent_df = df[df["OBJECT_TYPE"] == "AGENT"].iloc
     agent_index = actor_ids.index(agent_df[0]["TRACK_ID"])
 
     # Making scene centered here, now inlcuding Z indx
     origin = torch.tensor(
-        [av_df[19]["X"], av_df[19]["Y"], av_df[19]["Z"]], dtype=torch.float
+        [0,0,0], dtype=torch.float
     )
     # Calculate the heading vector, now in 3d
     av_heading_vector = origin - torch.tensor(
-        [av_df[18]["X"], av_df[18]["Y"], av_df[18]["Z"]], dtype=torch.float
+        [0,0,0], dtype=torch.float
     )
-
-    try:
-        rotate_mat = calculate_rotation_matrix(av_heading_vector)
-    except:
-        return {}
 
     # initialization
     x = torch.zeros(num_nodes, 50, 3, dtype=torch.float)
@@ -140,7 +133,7 @@ def uav_data(split: str, raw_path: str) -> Dict:
                 axis=-1,
             )
         ).float()
-        x[node_idx, node_steps] = torch.matmul(xyz - origin, rotate_mat)
+        x[node_idx, node_steps] = xyz - origin
         node_historical_steps = list(
             filter(lambda node_step: node_step < 20, node_steps)
         )
@@ -194,7 +187,6 @@ def uav_data(split: str, raw_path: str) -> Dict:
         "bos_mask": bos_mask,  # [N, 20]
         "rotate_angles": rotate_angles,  # [N, 3], Store theta and phi for all N
         "seq_id": int(seq_id),
-        "av_index": av_index,
         "agent_index": agent_index,
         "origin": origin.unsqueeze(0),
     }
