@@ -93,7 +93,7 @@ class LocalEncoder(nn.Module):
             out = out.view(
                 self.historical_steps, out.shape[0] // self.historical_steps, -1
             )
-        else:
+        elif data.num_nodes > 1:
             out = [None] * self.historical_steps
             for t in range(self.historical_steps):
                 edge_index, edge_attr = self.drop_edge(
