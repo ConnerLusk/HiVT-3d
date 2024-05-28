@@ -61,6 +61,8 @@ class GlobalInteractor(nn.Module):
         self.apply(init_weights)
 
     def forward(self, data: TemporalData, local_embed: torch.Tensor) -> torch.Tensor:
+        if data.num_nodes == 1:
+            return local_embed
         edge_index, _ = subgraph(
             subset=~data["padding_mask"][:, self.historical_steps - 1],
             edge_index=data.edge_index,
