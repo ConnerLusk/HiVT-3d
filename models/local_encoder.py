@@ -61,7 +61,7 @@ class LocalEncoder(nn.Module):
         )
 
     def forward(self, data: TemporalData) -> torch.Tensor:
-        if data.num_nodes > 1:
+        if data.edge_index.shape[0] >= 0:
             for t in range(self.historical_steps):
                 data[f"edge_index_{t}"], _ = subgraph(
                     subset=~data["padding_mask"][:, t], edge_index=data.edge_index
@@ -70,31 +70,7 @@ class LocalEncoder(nn.Module):
                     data["positions"][data[f"edge_index_{t}"][0], t]
                     - data["positions"][data[f"edge_index_{t}"][1], t]
                 )
-        if self.parallel:
-            snapshots = [None] * self.historical_steps
-            for t in range(self.historical_steps):
-                edge_index, edge_attr = self.drop_edge(
-                    data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
-                )
-                snapshots[t] = Data(
-                    x=data.x[:, t],
-                    edge_index=edge_index,
-                    edge_attr=edge_attr,
-                    num_nodes=data.num_nodes,
-                )
-            batch = Batch.from_data_list(snapshots)
-            out = self.aa_encoder(
-                x=batch.x,
-                t=None,
-                edge_index=batch.edge_index,
-                edge_attr=batch.edge_attr,
-                bos_mask=data["bos_mask"],
-                rotate_mat=data["rotate_mat"],
-            )
-            out = out.view(
-                self.historical_steps, out.shape[0] // self.historical_steps, -1
-            )
-        elif data.num_nodes > 1:
+
             out = [None] * self.historical_steps
             for t in range(self.historical_steps):
                 edge_index, edge_attr = self.drop_edge(
@@ -109,9 +85,13 @@ class LocalEncoder(nn.Module):
                     rotate_mat=data["rotate_mat"],
                 )
             out = torch.stack(out)  # [T, N, D]
-        out = self.temporal_encoder(
-            x=out, padding_mask=data["padding_mask"][:, : self.historical_steps]
-        )
+            out = self.temporal_encoder(
+                x=out, padding_mask=data["padding_mask"][:, : self.historical_steps]
+            )
+        else:
+            out = self.temporal_encoder(
+                data.x, padding_mask=data["padding_mask"][:, : self.historical_steps]
+            )
         return out
 
 
