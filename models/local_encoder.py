@@ -41,6 +41,7 @@ class LocalEncoder(nn.Module):
         super(LocalEncoder, self).__init__()
         self.historical_steps = historical_steps
         self.parallel = parallel
+        self.linear_transform = nn.Linear(1, embed_dim)
 
         self.drop_edge = DistanceDropEdge(local_radius)
         self.aa_encoder = AAEncoder(
@@ -89,6 +90,7 @@ class LocalEncoder(nn.Module):
                 x=out, padding_mask=data["padding_mask"][:, : self.historical_steps]
             )
         else:
+            out = self.linear_transform(data.x.unsqueeze(-1))
             out = self.temporal_encoder(
                 data.x, padding_mask=data["padding_mask"][:, : self.historical_steps]
             )
