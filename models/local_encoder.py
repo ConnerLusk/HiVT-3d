@@ -61,14 +61,16 @@ class LocalEncoder(nn.Module):
         )
 
     def forward(self, data: TemporalData) -> torch.Tensor:
-        for t in range(self.historical_steps):
-            data[f"edge_index_{t}"], _ = subgraph(
-                subset=~data["padding_mask"][:, t], edge_index=data.edge_index
-            )
-            data[f"edge_attr_{t}"] = (
-                data["positions"][data[f"edge_index_{t}"][0], t]
-                - data["positions"][data[f"edge_index_{t}"][1], t]
-            )
+        has_other = data.edge_index.shape[0]
+        if has_other > 0:
+            for t in range(self.historical_steps):
+                data[f"edge_index_{t}"], _ = subgraph(
+                    subset=~data["padding_mask"][:, t], edge_index=data.edge_index
+                )
+                data[f"edge_attr_{t}"] = (
+                    data["positions"][data[f"edge_index_{t}"][0], t]
+                    - data["positions"][data[f"edge_index_{t}"][1], t]
+                )
         if self.parallel:
             snapshots = [None] * self.historical_steps
             for t in range(self.historical_steps):
@@ -99,6 +101,8 @@ class LocalEncoder(nn.Module):
                 edge_index, edge_attr = self.drop_edge(
                     data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
                 )
+                print(edge_index)
+                print(edge_attr)
                 out[t] = self.aa_encoder(
                     x=data.x[:, t],
                     t=t,
