@@ -162,30 +162,54 @@ class MLPDecoder(nn.Module):
         self.apply(init_weights)
 
     def forward(
-        self, local_embed: torch.Tensor, global_embed: torch.Tensor
+        self, local_embed: torch.Tensor, global_embed: torch.Tensor, num_nodes: int
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        pi = (
-            self.pi(
+        if num_nodes > 0:
+            pi = (
+                self.pi(
+                    torch.cat(
+                        (
+                            local_embed.expand(self.num_modes, *local_embed.shape),
+                            global_embed,
+                        ),
+                        dim=-1,
+                    )
+                )
+                .squeeze(-1)
+                .t()
+            )
+            out = self.aggr_embed(
                 torch.cat(
-                    (
-                        local_embed.expand(self.num_modes, *local_embed.shape),
-                        global_embed,
-                    ),
+                    (global_embed, local_embed.expand(self.num_modes, *local_embed.shape)),
                     dim=-1,
                 )
             )
-            .squeeze(-1)
-            .t()
+            loc = self.loc(out).view(
+                self.num_modes, -1, self.future_steps, 3
+            )  # [F, N, H, 3]
+            if self.uncertain:
+                scale = (
+                    F.elu_(self.scale(out), alpha=1.0).view(
+                        self.num_modes, -1, self.future_steps, 3
+                    )
+                    + 1.0
+                )
+                scale = scale + self.min_scale  # [F, N, H, 3]
+                return torch.cat((loc, scale), dim=-1), pi  # [F, N, H, 6], [N, F]
+            return loc, pi  # [F, N, H, 3], [N, F]
+        pi = (
+        self.pi(
+            local_embed.expand(self.num_modes, *local_embed.shape)
+        )
+        .squeeze(-1)
+        .t()
         )
         out = self.aggr_embed(
-            torch.cat(
-                (global_embed, local_embed.expand(self.num_modes, *local_embed.shape)),
-                dim=-1,
-            )
+            local_embed.expand(self.num_modes, *local_embed.shape)
         )
         loc = self.loc(out).view(
             self.num_modes, -1, self.future_steps, 3
-        )  # [F, N, H, 2]
+        )  # [F, N, H, 3]
         if self.uncertain:
             scale = (
                 F.elu_(self.scale(out), alpha=1.0).view(
