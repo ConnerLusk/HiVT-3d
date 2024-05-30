@@ -97,25 +97,25 @@ class LocalEncoder(nn.Module):
             )
         else:
             out = [None] * self.historical_steps
-            for t in range(self.historical_steps):
-                if has_other:
+            if has_other:
+                for t in range(self.historical_steps):
                     edge_index, edge_attr = self.drop_edge(
                         data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
                     )
-                else:
-                    edge_index = []
-                    edge_attr = []
-                print(edge_index)
-                print(edge_attr)
-                out[t] = self.aa_encoder(
-                    x=data.x[:, t],
-                    t=t,
-                    edge_index=edge_index,
-                    edge_attr=edge_attr,
-                    bos_mask=data["bos_mask"][:, t],
-                    rotate_mat=data["rotate_mat"],
-                )
-            out = torch.stack(out)  # [T, N, D]
+                    print(edge_index)
+                    print(edge_attr)
+                    out[t] = self.aa_encoder(
+                        x=data.x[:, t],
+                        t=t,
+                        edge_index=edge_index,
+                        edge_attr=edge_attr,
+                        bos_mask=data["bos_mask"][:, t],
+                        rotate_mat=data["rotate_mat"],
+                    )
+                print("out shape")
+                print(out.shape)
+                out = torch.stack(out)  # [T, N, D]
+                print(out.shape)
         out = self.temporal_encoder(
             x=out, padding_mask=data["padding_mask"][:, : self.historical_steps]
         )
