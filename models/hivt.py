@@ -103,7 +103,9 @@ class HiVT(pl.LightningModule):
             data["rotate_mat"] = None
 
         local_embed = self.local_encoder(data=data)
-        global_embed = self.global_interactor(data=data, local_embed=local_embed)
+        global_embed = None
+        if data.edge_attr.shape[0] > 0:
+            global_embed = self.global_interactor(data=data, local_embed=local_embed)
         y_hat, pi = self.decoder(local_embed=local_embed, global_embed=global_embed)
         return y_hat, pi
 
