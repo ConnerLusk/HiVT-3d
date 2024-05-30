@@ -110,9 +110,9 @@ class LocalEncoder(nn.Module):
                         bos_mask=data["bos_mask"][:, t],
                         rotate_mat=data["rotate_mat"],
                     )
+                    print(out[t].shape)
                 print("out shape")
                 print(len(out))
-                print(out)
                 out = torch.stack(out)  # [T, N, D]
                 print(out.shape)
         out = self.temporal_encoder(
