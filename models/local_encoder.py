@@ -60,6 +60,10 @@ class LocalEncoder(nn.Module):
             num_layers=num_temporal_layers,
         )
 
+        self.center_embed = SingleInputEmbedding(
+            in_channel=node_dim, out_channel=embed_dim
+        )
+
     def forward(self, data: TemporalData) -> torch.Tensor:
         has_other = data.edge_index.shape[0]
         if has_other > 0:
@@ -97,8 +101,8 @@ class LocalEncoder(nn.Module):
             )
         else:
             out = [None] * self.historical_steps
-            if has_other:
-                for t in range(self.historical_steps):
+            for t in range(self.historical_steps):
+                if has_other:
                     edge_index, edge_attr = self.drop_edge(
                         data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
                     )
@@ -110,11 +114,10 @@ class LocalEncoder(nn.Module):
                         bos_mask=data["bos_mask"][:, t],
                         rotate_mat=data["rotate_mat"],
                     )
-                    print(out[t].shape)
-                print("out shape")
-                print(len(out))
-                out = torch.stack(out)  # [T, N, D]
-                print(out.shape)
+                else:
+                    out = self.center_embed(data.x[:, t])
+                    
+            out = torch.stack(out)  # [T, N, D]
         out = self.temporal_encoder(
             x=out, padding_mask=data["padding_mask"][:, : self.historical_steps]
         )
