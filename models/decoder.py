@@ -137,6 +137,13 @@ class MLPDecoder(nn.Module):
             nn.LayerNorm(self.hidden_size),
             nn.ReLU(inplace=True),
         )
+
+        self.aggr_embed2= nn.Sequential(
+            nn.Linear(self.hidden_size, self.hidden_size),
+            nn.LayerNorm(self.hidden_size),
+            nn.ReLU(inplace=True),
+        )
+
         self.loc = nn.Sequential(
             nn.Linear(self.hidden_size, self.hidden_size),
             nn.LayerNorm(self.hidden_size),
@@ -173,7 +180,7 @@ class MLPDecoder(nn.Module):
     def forward(
         self, local_embed: torch.Tensor, global_embed: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        if global_embed is not  None:
+        if global_embed is not None:
             pi = (
                 self.pi(
                     torch.cat(
@@ -206,6 +213,7 @@ class MLPDecoder(nn.Module):
                 scale = scale + self.min_scale  # [F, N, H, 3]
                 return torch.cat((loc, scale), dim=-1), pi  # [F, N, H, 6], [N, F]
             return loc, pi  # [F, N, H, 3], [N, F]
+        print("HERE")
         print(local_embed.expand(self.num_modes, *local_embed.shape).shape)
         pi = (
             self.pi2(
@@ -214,7 +222,7 @@ class MLPDecoder(nn.Module):
             .squeeze(-1)
             .t()
         )
-        out = self.aggr_embed(
+        out = self.aggr_embed2(
             local_embed.expand(self.num_modes, *local_embed.shape)
         )
         loc = self.loc(out).view(
