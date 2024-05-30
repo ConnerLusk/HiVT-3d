@@ -159,6 +159,15 @@ class MLPDecoder(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(self.hidden_size, 1),
         )
+        self.pi2 = nn.Sequential(
+            nn.Linear(self.hidden_size, self.hidden_size),
+            nn.LayerNorm(self.hidden_size),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.hidden_size, self.hidden_size),
+            nn.LayerNorm(self.hidden_size),
+            nn.ReLU(inplace=True),
+            nn.Linear(self.hidden_size, 1),
+        )
         self.apply(init_weights)
 
     def forward(
@@ -198,7 +207,7 @@ class MLPDecoder(nn.Module):
                 return torch.cat((loc, scale), dim=-1), pi  # [F, N, H, 6], [N, F]
             return loc, pi  # [F, N, H, 3], [N, F]
         pi = (
-            self.pi(
+            self.pi2(
                 local_embed.expand(self.num_modes, *local_embed.shape)
             )
             .squeeze(-1)
