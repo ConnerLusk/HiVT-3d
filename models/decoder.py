@@ -213,8 +213,6 @@ class MLPDecoder(nn.Module):
                 scale = scale + self.min_scale  # [F, N, H, 3]
                 return torch.cat((loc, scale), dim=-1), pi  # [F, N, H, 6], [N, F]
             return loc, pi  # [F, N, H, 3], [N, F]
-        print("HERE")
-        print(local_embed.expand(self.num_modes, *local_embed.shape).shape)
         pi = (
             self.pi2(
                 local_embed.expand(self.num_modes, *local_embed.shape)

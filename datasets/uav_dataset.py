@@ -71,7 +71,6 @@ class UAVDataset(Dataset):
         for raw_path in tqdm(self.raw_paths):
             kwargs = uav_data(self._split, raw_path)
             if kwargs == {}:
-                print(raw_path)
                 continue
             data = TemporalData(**kwargs)
             torch.save(

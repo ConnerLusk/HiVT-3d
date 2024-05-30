@@ -318,12 +318,8 @@ class TemporalEncoder(nn.Module):
         self.apply(init_weights)
 
     def forward(self, x: torch.Tensor, padding_mask: torch.Tensor) -> torch.Tensor:
-        print("padding shape: ", padding_mask.t().unsqueeze(-1).shape)
-        print("x shape: ", x.shape)
         x = torch.where(padding_mask.t().unsqueeze(-1), self.padding_token, x)
-        print("x2 shape: ", x.shape)
         expand_cls_token = self.cls_token.expand(-1, x.shape[1], -1)
-        print("expand_cls_token.shape: ", expand_cls_token.shape)
         x = torch.cat((x, expand_cls_token), dim=0)
         x = x + self.pos_embed
         out = self.transformer_encoder(
