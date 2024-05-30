@@ -115,7 +115,7 @@ class LocalEncoder(nn.Module):
                         rotate_mat=data["rotate_mat"],
                     )
                 else:
-                    out = self.center_embed(data.x[:, t])
+                    out[t] = self.center_embed(data.x[:, t])
                     
             out = torch.stack(out)  # [T, N, D]
         out = self.temporal_encoder(
