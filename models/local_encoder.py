@@ -98,9 +98,13 @@ class LocalEncoder(nn.Module):
         else:
             out = [None] * self.historical_steps
             for t in range(self.historical_steps):
-                edge_index, edge_attr = self.drop_edge(
-                    data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
-                )
+                if has_other:
+                    edge_index, edge_attr = self.drop_edge(
+                        data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
+                    )
+                else:
+                    edge_index = []
+                    edge_attr = []
                 print(edge_index)
                 print(edge_attr)
                 out[t] = self.aa_encoder(
