@@ -102,8 +102,8 @@ class LocalEncoder(nn.Module):
                     edge_index, edge_attr = self.drop_edge(
                         data[f"edge_index_{t}"], data[f"edge_attr_{t}"]
                     )
-                    print(edge_index)
-                    print(edge_attr)
+                    print(edge_index.shape)
+                    print(edge_attr.shape)
                     out[t] = self.aa_encoder(
                         x=data.x[:, t],
                         t=t,
@@ -113,7 +113,7 @@ class LocalEncoder(nn.Module):
                         rotate_mat=data["rotate_mat"],
                     )
                 print("out shape")
-                print(out.shape)
+                print(len(out))
                 out = torch.stack(out)  # [T, N, D]
                 print(out.shape)
         out = self.temporal_encoder(
